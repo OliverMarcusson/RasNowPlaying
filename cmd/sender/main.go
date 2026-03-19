@@ -18,6 +18,10 @@ import (
 func main() {
 	baseLogger := log.New(os.Stdout, "", log.LstdFlags|log.LUTC)
 
+	if err := config.LoadDotEnv(".env"); err != nil && !errors.Is(err, os.ErrNotExist) {
+		baseLogger.Fatalf("FATAL load .env: %v", err)
+	}
+
 	cfg, err := config.FromEnv()
 	if err != nil {
 		baseLogger.Fatalf("FATAL load config: %v", err)

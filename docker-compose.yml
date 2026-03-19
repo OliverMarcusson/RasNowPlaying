@@ -6,6 +6,7 @@ services:
     environment:
       RECEIVER_URL: ${RECEIVER_URL:-}
       SOURCE_NAME: ${SOURCE_NAME:-raspotify-pi}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
       POLL_INTERVAL: ${POLL_INTERVAL:-2s}
@@ -14,8 +15,10 @@ services:
       MAX_RETRY_DELAY: ${MAX_RETRY_DELAY:-1m}
       SPOOL_FILE: ${SPOOL_FILE:-runtime/spool/current_event.json}
       STATE_FILE: ${STATE_FILE:-runtime/state/sender_state.json}
+      TRACK_EVENTS: ${TRACK_EVENTS:-start,started,playing,changed,track_changed,loading}
+      STOP_EVENTS: ${STOP_EVENTS:-stopped,stop,session_disconnected}
       SPOTIFY_TOKEN_URL: ${SPOTIFY_TOKEN_URL:-https://accounts.spotify.com/api/token}
       SPOTIFY_API_BASE_URL: ${SPOTIFY_API_BASE_URL:-https://api.spotify.com/v1}
     volumes:
-      - ./runtime:/app/runtime
+      - ${HOST_RUNTIME_DIR:-./runtime}:/app/runtime
     restart: unless-stopped

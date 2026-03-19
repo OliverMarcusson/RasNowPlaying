@@ -9,6 +9,8 @@ The sender is split into two parts:
 
 The daemon is designed to run under Docker Compose while the `raspotify` hook remains outside the container. The integration point is a bind-mounted host directory shared by both.
 
+Important: the stock `raspotify.service` unit uses hardening such as `ProtectHome=true`, so a hook script located under `/home/...` may fail with `Permission denied` even when the file itself is executable. For a real host install, place the hook script somewhere like `/usr/local/bin` and write spool/state files under `raspotify`'s writable state directory in `/var/lib/raspotify/...`.
+
 ## Layout
 
 - `cmd/sender`: Go entrypoint
@@ -33,22 +35,26 @@ The daemon is designed to run under Docker Compose while the `raspotify` hook re
 
 ## Raspotify Hook Setup
 
-Point `raspotify` at the repo script directly, or symlink to it from a stable host path, then add this to `/etc/raspotify/conf`:
+Install the hook script somewhere outside `/home`, then add this to `/etc/raspotify/conf`:
 
 ```sh
-LIBRESPOT_ONEVENT="/absolute/path/to/RasPlayingNow/scripts/raspotify-onevent.sh"
+LIBRESPOT_ONEVENT="/usr/local/bin/rasplayingnow-raspotify-onevent.sh"
 RASNOWPLAYING_SOURCE="raspotify-pi"
+RASNOWPLAYING_SPOOL_FILE="/var/lib/raspotify/rasplayingnow/runtime/spool/current_event.json"
+RASNOWPLAYING_HOOK_LOG_FILE="/var/lib/raspotify/rasplayingnow/runtime/state/raspotify-onevent.log"
 ```
 
-By default the hook writes to `../runtime/spool/current_event.json` relative to the script location, so if you keep the script in this repo you do not need to set `RASNOWPLAYING_SPOOL_FILE`.
-
-For host-side hook diagnostics, you can also set:
+Install it with:
 
 ```sh
-RASNOWPLAYING_HOOK_LOG_FILE="/absolute/path/to/RasPlayingNow/runtime/state/raspotify-onevent.log"
+sudo install -D -m 0755 scripts/raspotify-onevent.sh /usr/local/bin/rasplayingnow-raspotify-onevent.sh
+sudo install -d -m 0755 /var/lib/raspotify/rasplayingnow/runtime/spool
+sudo install -d -m 0755 /var/lib/raspotify/rasplayingnow/runtime/state
 ```
 
-That file records each hook invocation and the key librespot variables the script received.
+That log file records each hook invocation and the key librespot variables the script received.
+
+Set `HOST_RUNTIME_DIR=/var/lib/raspotify/rasplayingnow/runtime` in `.env` so Docker mounts the same host directory into the sender container.
 
 Then restart raspotify:
 
@@ -60,12 +66,14 @@ The container reads the same file through the bind mount configured in `docker-c
 
 ## Docker Compose
 
-The default compose file mounts `./runtime` into `/app/runtime` inside the container and reads configuration from shell environment or `.env`:
+The default compose file mounts `${HOST_RUNTIME_DIR:-./runtime}` into `/app/runtime` inside the container and reads configuration from shell environment or `.env`:
 
 - host spool file: `./runtime/spool/current_event.json`
 - host state file: `./runtime/state/sender_state.json`
 - container spool file: `runtime/spool/current_event.json`
 - container state file: `runtime/state/sender_state.json`
+
+If you use the recommended raspotify-safe host path, set `HOST_RUNTIME_DIR=/var/lib/raspotify/rasplayingnow/runtime` in `.env`. The container paths stay the same.
 
 Start it with:
 
