@@ -24,6 +24,7 @@ The daemon is designed to run under Docker Compose while the `raspotify` hook re
    - `RECEIVER_URL`
    - `SPOTIFY_CLIENT_ID`
    - `SPOTIFY_CLIENT_SECRET`
+   - optionally set `LOG_LEVEL=debug` while diagnosing sender issues
 2. Create the shared directories if they do not already exist:
    - `runtime/spool`
    - `runtime/state`
@@ -69,6 +70,8 @@ View logs with:
 ```sh
 docker compose logs -f sender
 ```
+
+For deeper diagnostics, set `LOG_LEVEL=debug` in `.env` and restart the stack. The sender will then log spool polling, event normalization, dedupe decisions, Spotify lookups, POST attempts, retries, and receiver responses.
 
 ## systemd
 

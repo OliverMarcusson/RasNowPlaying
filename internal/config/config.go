@@ -19,6 +19,7 @@ type Config struct {
 	SourceName        string
 	SpoolFile         string
 	StateFile         string
+	LogLevel          string
 	PollInterval      time.Duration
 	HTTPTimeout       time.Duration
 	InitialRetryDelay time.Duration
@@ -34,6 +35,7 @@ func FromEnv() (Config, error) {
 		SourceName:  getEnv("SOURCE_NAME", "raspotify-pi"),
 		SpoolFile:   getEnv("SPOOL_FILE", "runtime/spool/current_event.json"),
 		StateFile:   getEnv("STATE_FILE", "runtime/state/sender_state.json"),
+		LogLevel:    strings.ToLower(getEnv("LOG_LEVEL", "info")),
 		TrackEvents: splitSet(getEnv("TRACK_EVENTS", "started,playing,changed,track_changed,loading")),
 		StopEvents:  splitSet(getEnv("STOP_EVENTS", "stopped,stop,session_disconnected")),
 		Spotify: SpotifyConfig{
@@ -73,6 +75,8 @@ func FromEnv() (Config, error) {
 		return Config{}, fmt.Errorf("POLL_INTERVAL must be greater than zero")
 	case cfg.HTTPTimeout <= 0:
 		return Config{}, fmt.Errorf("HTTP_TIMEOUT must be greater than zero")
+	case cfg.LogLevel != "info" && cfg.LogLevel != "debug":
+		return Config{}, fmt.Errorf("LOG_LEVEL must be one of: info, debug")
 	}
 
 	return cfg, nil

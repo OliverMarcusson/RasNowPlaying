@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"rasplayingnow/internal/config"
+	"rasplayingnow/internal/diag"
 	"rasplayingnow/internal/model"
 )
 
@@ -24,18 +25,21 @@ type tokenCache struct {
 type Client struct {
 	httpClient *http.Client
 	cfg        config.SpotifyConfig
+	logger     *diag.Logger
 	mu         sync.Mutex
 	token      tokenCache
 }
 
-func NewClient(timeout time.Duration, cfg config.SpotifyConfig) *Client {
+func NewClient(timeout time.Duration, cfg config.SpotifyConfig, logger *diag.Logger) *Client {
 	return &Client{
 		httpClient: &http.Client{Timeout: timeout},
 		cfg:        cfg,
+		logger:     logger,
 	}
 }
 
 func (c *Client) GetTrack(ctx context.Context, trackID string) (*model.TrackMetadata, error) {
+	c.logger.Debugf("spotify track lookup start track_id=%s", trackID)
 	token, err := c.accessToken(ctx)
 	if err != nil {
 		return nil, err
@@ -49,12 +53,14 @@ func (c *Client) GetTrack(ctx context.Context, trackID string) (*model.TrackMeta
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		c.logger.Errorf("spotify track lookup request failed track_id=%s err=%v", trackID, err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+		c.logger.Errorf("spotify track lookup failed track_id=%s status=%s body=%s", trackID, resp.Status, strings.TrimSpace(string(body)))
 		return nil, fmt.Errorf("spotify track lookup returned %s: %s", resp.Status, string(body))
 	}
 
@@ -74,6 +80,7 @@ func (c *Client) GetTrack(ctx context.Context, trackID string) (*model.TrackMeta
 	if len(track.Album.Images) > 0 {
 		coverURL = track.Album.Images[0].URL
 	}
+	c.logger.Debugf("spotify track lookup success track_id=%s title=%q album=%q artists=%d", trackID, track.Name, track.Album.Name, len(artists))
 
 	return &model.TrackMetadata{
 		Title:      track.Name,
@@ -90,8 +97,10 @@ func (c *Client) accessToken(ctx context.Context) (string, error) {
 
 	now := time.Now().UTC()
 	if c.token.AccessToken != "" && now.Before(c.token.ExpiresAt) {
+		c.logger.Debugf("spotify token cache hit expires_at=%s", c.token.ExpiresAt.Format(time.RFC3339))
 		return c.token.AccessToken, nil
 	}
+	c.logger.Infof("requesting new spotify client-credentials token")
 
 	form := url.Values{}
 	form.Set("grant_type", "client_credentials")
@@ -105,12 +114,14 @@ func (c *Client) accessToken(ctx context.Context) (string, error) {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		c.logger.Errorf("spotify token request failed err=%v", err)
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+		c.logger.Errorf("spotify token request failed status=%s body=%s", resp.Status, strings.TrimSpace(string(body)))
 		return "", fmt.Errorf("spotify token request returned %s: %s", resp.Status, string(body))
 	}
 
@@ -130,6 +141,7 @@ func (c *Client) accessToken(ctx context.Context) (string, error) {
 		AccessToken: tokenResp.AccessToken,
 		ExpiresAt:   expiresAt,
 	}
+	c.logger.Infof("spotify token acquired expires_at=%s", expiresAt.Format(time.RFC3339))
 
 	return c.token.AccessToken, nil
 }

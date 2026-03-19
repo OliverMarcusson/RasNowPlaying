@@ -5,21 +5,24 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
 	"rasplayingnow/internal/config"
+	"rasplayingnow/internal/diag"
 )
 
 func TestGetTrack(t *testing.T) {
+	logger := diag.New(logDiscarder(t), "debug")
 	client := NewClient(5*time.Second, config.SpotifyConfig{
 		ClientID:     "client",
 		ClientSecret: "secret",
 		TokenURL:     "https://spotify.test/token",
 		APIBaseURL:   "https://spotify.test/v1",
-	})
+	}, logger)
 	client.httpClient = &http.Client{
 		Timeout: 5 * time.Second,
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
@@ -77,6 +80,11 @@ func TestGetTrack(t *testing.T) {
 	if track.DurationMS != 210000 {
 		t.Fatalf("track.DurationMS = %d", track.DurationMS)
 	}
+}
+
+func logDiscarder(t *testing.T) *log.Logger {
+	t.Helper()
+	return log.New(io.Discard, "", 0)
 }
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
