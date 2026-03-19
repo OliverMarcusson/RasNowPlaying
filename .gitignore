@@ -3,4 +3,4 @@ runtime/spool/*
 runtime/state/*
 !runtime/spool/.gitkeep
 !runtime/state/.gitkeep
-sender
+/sender
