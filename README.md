@@ -70,6 +70,16 @@ View logs with:
 docker compose logs -f sender
 ```
 
+## systemd
+
+If you want the compose stack to start at boot, install [systemd/rasplayingnow-sender.service](/home/oliver/src/Go/RasPlayingNow/systemd/rasplayingnow-sender.service):
+
+```sh
+sudo cp /home/oliver/src/Go/RasPlayingNow/systemd/rasplayingnow-sender.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now rasplayingnow-sender.service
+```
+
 ## Behavior
 
 - latest-only queue: only one pending event is kept

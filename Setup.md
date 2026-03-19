@@ -64,6 +64,27 @@ sudo systemctl restart raspotify.service
 
 8. Make sure Docker and Docker Compose are installed on the host.
 
+9. Install the systemd unit if you want the sender stack to start on boot.
+
+   The unit file is [systemd/rasplayingnow-sender.service](/home/oliver/src/Go/RasPlayingNow/systemd/rasplayingnow-sender.service).
+
+   Install it with:
+
+```sh
+sudo cp /home/oliver/src/Go/RasPlayingNow/systemd/rasplayingnow-sender.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now rasplayingnow-sender.service
+```
+
+   Useful commands:
+
+```sh
+sudo systemctl status rasplayingnow-sender.service
+sudo systemctl restart rasplayingnow-sender.service
+sudo systemctl reload rasplayingnow-sender.service
+sudo journalctl -u rasplayingnow-sender.service -f
+```
+
 ## Quick Verification
 
 Before starting the stack, verify:
