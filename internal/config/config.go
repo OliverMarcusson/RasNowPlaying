@@ -36,7 +36,7 @@ func FromEnv() (Config, error) {
 		SpoolFile:   getEnv("SPOOL_FILE", "runtime/spool/current_event.json"),
 		StateFile:   getEnv("STATE_FILE", "runtime/state/sender_state.json"),
 		LogLevel:    strings.ToLower(getEnv("LOG_LEVEL", "info")),
-		TrackEvents: splitSet(getEnv("TRACK_EVENTS", "started,playing,changed,track_changed,loading")),
+		TrackEvents: splitSet(getEnv("TRACK_EVENTS", "start,started,playing,changed,track_changed,loading")),
 		StopEvents:  splitSet(getEnv("STOP_EVENTS", "stopped,stop,session_disconnected")),
 		Spotify: SpotifyConfig{
 			ClientID:     os.Getenv("SPOTIFY_CLIENT_ID"),

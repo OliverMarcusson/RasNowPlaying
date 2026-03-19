@@ -42,6 +42,14 @@ RASNOWPLAYING_SOURCE="raspotify-pi"
 
 By default the hook writes to `../runtime/spool/current_event.json` relative to the script location, so if you keep the script in this repo you do not need to set `RASNOWPLAYING_SPOOL_FILE`.
 
+For host-side hook diagnostics, you can also set:
+
+```sh
+RASNOWPLAYING_HOOK_LOG_FILE="/absolute/path/to/RasPlayingNow/runtime/state/raspotify-onevent.log"
+```
+
+That file records each hook invocation and the key librespot variables the script received.
+
 Then restart raspotify:
 
 ```sh

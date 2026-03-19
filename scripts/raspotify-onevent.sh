@@ -4,12 +4,37 @@ set -eu
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 PROJECT_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 DEFAULT_SPOOL_FILE="$PROJECT_ROOT/runtime/spool/current_event.json"
+DEFAULT_HOOK_LOG_FILE="$PROJECT_ROOT/runtime/state/raspotify-onevent.log"
 
 SPOOL_FILE="${RASNOWPLAYING_SPOOL_FILE:-$DEFAULT_SPOOL_FILE}"
+HOOK_LOG_FILE="${RASNOWPLAYING_HOOK_LOG_FILE:-}"
 SOURCE_NAME="${RASNOWPLAYING_SOURCE:-raspotify-pi}"
-RAW_EVENT="${PLAYER_EVENT:-unknown}"
+RAW_EVENT="${PLAYER_EVENT:-${1:-unknown}}"
 TRACK_ID_VALUE="${TRACK_ID:-}"
-SPOTIFY_URI_VALUE="${SPOTIFY_URI:-}"
+SPOTIFY_URI_VALUE="${URI:-${SPOTIFY_URI:-}}"
+
+if [ -n "$HOOK_LOG_FILE" ]; then
+  HOOK_LOG_DIR="$(dirname "$HOOK_LOG_FILE")"
+  mkdir -p "$HOOK_LOG_DIR"
+  {
+    printf '%s raw_event=%s arg1=%s track_id=%s uri=%s spotify_uri=%s cwd=%s\n' \
+      "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+      "${PLAYER_EVENT:-}" \
+      "${1:-}" \
+      "${TRACK_ID:-}" \
+      "${URI:-}" \
+      "${SPOTIFY_URI:-}" \
+      "$(pwd)"
+  } >> "$HOOK_LOG_FILE"
+fi
+
+if [ -z "$TRACK_ID_VALUE" ] && [ -n "$SPOTIFY_URI_VALUE" ]; then
+  case "$SPOTIFY_URI_VALUE" in
+    spotify:track:*)
+      TRACK_ID_VALUE="${SPOTIFY_URI_VALUE#spotify:track:}"
+      ;;
+  esac
+fi
 
 if [ -z "$SPOTIFY_URI_VALUE" ] && [ -n "$TRACK_ID_VALUE" ]; then
   case "$TRACK_ID_VALUE" in
