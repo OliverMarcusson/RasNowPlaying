@@ -1,0 +1,21 @@
+services:
+  sender:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      RECEIVER_URL: ${RECEIVER_URL:-}
+      SOURCE_NAME: ${SOURCE_NAME:-raspotify-pi}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
+      POLL_INTERVAL: ${POLL_INTERVAL:-2s}
+      HTTP_TIMEOUT: ${HTTP_TIMEOUT:-10s}
+      INITIAL_RETRY_DELAY: ${INITIAL_RETRY_DELAY:-2s}
+      MAX_RETRY_DELAY: ${MAX_RETRY_DELAY:-1m}
+      SPOOL_FILE: ${SPOOL_FILE:-runtime/spool/current_event.json}
+      STATE_FILE: ${STATE_FILE:-runtime/state/sender_state.json}
+      SPOTIFY_TOKEN_URL: ${SPOTIFY_TOKEN_URL:-https://accounts.spotify.com/api/token}
+      SPOTIFY_API_BASE_URL: ${SPOTIFY_API_BASE_URL:-https://api.spotify.com/v1}
+    volumes:
+      - ./runtime:/app/runtime
+    restart: unless-stopped
